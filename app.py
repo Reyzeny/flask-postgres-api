@@ -47,22 +47,24 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(600), unique=False)
     price = db.Column(db.Float)
+    image_name = db.Column(db.text, nullable=False)
     discount = db.Column(db.Boolean, default=False)
     discounted_product = db.relationship('DiscountedProduct', backref=db.backref('products', lazy=True))
     no_of_views = db.Column(db.Integer)
     no_of_purchases = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    def __init__(self, name, price, discount=False, no_of_views=0, no_of_purchases=0):
+    def __init__(self, name, price, image_name, discount=False, no_of_views=0, no_of_purchases=0):
         self.name = name
         self.price = price
+        self.image_name = image_name
         self.discount = discount
         self.no_of_views = no_of_views
         self.no_of_purchases = no_of_purchases
 class ProductSchema(ma.Schema):
     class Meta:
         #Fields to expose
-        fields = ('id', 'name', 'price', 'discount', 'no_of_views', 'no_of_purchases', 'created_at', 'updated_at')
+        fields = ('id', 'name', 'price', 'image_name', 'discount', 'no_of_views', 'no_of_purchases', 'created_at', 'updated_at')
 product_schema = ProductSchema()
 products_schema = ProductSchema(many=True)
     
@@ -189,11 +191,12 @@ def product_banner_detail(id):
 def add_product():
     name = request.json["name"]
     price = request.json["price"]
+    image_name = request.json["image_name"]
     discount = request.json["is_discounted"]
     no_of_views = request.json["no_of_views"]
     no_of_purchases = request.json["no_of_purchases"]
     
-    current_product = Product(name, price, discount, no_of_views, no_of_purchases)
+    current_product = Product(name, price, image_name, discount, no_of_views, no_of_purchases)
     db.session.add(current_product)
     db.session.flush()
     if (discount==True):
