@@ -6,10 +6,22 @@ from flask_cors import CORS
 import json
 import os
 
+#static_folder_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
 app = Flask(__name__)
+app._static_folder = os.path.abspath("static/")
+
+print ("#######################")
+print ("#######################")
+print ("#######################")
+print (app.static_url_path)
+print ("#######################")
+print ("#######################")
+print ("#######################")
+# app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'crud.sqlite')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://pelumi:pelumi@localhost:5432/db1'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://pelumi:pelumi@localhost:5432/pharmacy'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["DEBUG"] = True
 db = SQLAlchemy(app)
@@ -47,7 +59,7 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(600), unique=False)
     price = db.Column(db.Float)
-    image_name = db.Column(db.text, nullable=False)
+    image_name = db.Column(db.String(600), nullable=False)
     discount = db.Column(db.Boolean, default=False)
     discounted_product = db.relationship('DiscountedProduct', backref=db.backref('products', lazy=True))
     no_of_views = db.Column(db.Integer)
@@ -191,7 +203,7 @@ def product_banner_detail(id):
 def add_product():
     name = request.json["name"]
     price = request.json["price"]
-    image_name = request.json["image_name"]
+    image_name = "/static/images/products/" + request.json["image_name"]
     discount = request.json["is_discounted"]
     no_of_views = request.json["no_of_views"]
     no_of_purchases = request.json["no_of_purchases"]
@@ -214,10 +226,21 @@ def add_product():
 # endpoint to show all top products
 @app.route("/top_products", methods=["GET"])
 def get_top_products():
-    top_products = Product.query.order_by(Product.no_of_views).all()
+    top_products = Product.query.order_by(Product.no_of_views.desc()).all()
     result = products_schema.dump(top_products)
     return jsonify(result.data)
 
+@app.route("/new_products", methods=["GET"])
+def get_new_products():
+    new_products = Product.query.order_by(Product.updated_at.desc()).all()
+    result = products_schema.dump(new_products)
+    return jsonify(result.data)
+
+@app.route("/discounted_products", methods=["GET"])
+def get_discounted_products():
+    discounted_products = Product.query.filter(Product.discount==True).all()
+    result = products_schema.dump(discounted_products)
+    return jsonify(result.data)
 
 if __name__ == '__main__':
     app.run(debug=True)
